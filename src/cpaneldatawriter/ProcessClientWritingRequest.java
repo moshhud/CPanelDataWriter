@@ -12,6 +12,9 @@ import javax.net.ssl.HttpsURLConnection;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
+import common.ApplicationConstants;
+import common.SmsMailLogDAO;
 import diskusage.DiskUsageMonitor;
 import diskusage.WebHostingServerManagementDTO;
 import util.ReturnObject;
@@ -114,8 +117,7 @@ public class ProcessClientWritingRequest {
 				writer.write("&pkg="+dto.getPackageName());
 			}
 			
-            writer.flush();
-			
+            writer.flush();			
 			BufferedReader reader=new BufferedReader(new InputStreamReader(con.getInputStream()));
 			
 			String line="";
@@ -129,6 +131,9 @@ public class ProcessClientWritingRequest {
 			String arr[] = response.split(":");
 			if(arr[1].equals("1")) {
 				status = true;
+				if(methodType==1) {
+					sendEMailToClient(dto,API);
+				}
 				
 			}
 		
@@ -153,6 +158,38 @@ public class ProcessClientWritingRequest {
 			 logger.fatal("Error : "+e);
 		  
 		}
+	}
+	
+	public void sendEMailToClient(ManageWebHostingDTO dto,String API) {
+		try {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Dear Sir/Madam,<br>");
+			sb.append("Congratulations!!!<br>");
+			sb.append("Your cpanel account activated with below credentials: <br><br>");
+			sb.append("Login URL: "+API+" <br>");
+			sb.append("User Name: "+dto.getUserName()+" <br>");
+			sb.append("Password: "+dto.getUserPass()+" <br>");
+			 
+			sb.append("<br>");
+			sb.append("Regards,<br>");
+			sb.append("Webhosting Automation Service.");
+			
+			String msgText = sb.toString();
+			String mailBody = new String(msgText.getBytes(),"UTF-8");
+			SmsMailLogDAO log = new SmsMailLogDAO(
+					ApplicationConstants.EMAIL_CONSTANT.MSG_TYPE_EMAIL,
+					dto.getEmail(), 
+					ApplicationConstants.EMAIL_CONSTANT.FROM, 
+					ApplicationConstants.EMAIL_CONSTANT.SUBJECT_Cpanel_ACCESS,
+					mailBody, 
+					"");
+			log.run();
+		}
+		catch(Exception e) {
+			 logger.fatal("Error : "+e);
+		  
+		}
+		
 	}
 	
 	@SuppressWarnings({ "rawtypes" })

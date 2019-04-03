@@ -14,6 +14,8 @@ import com.mysql.jdbc.PreparedStatement;
 import databasemanager.DatabaseManager;
 import diskusage.DiskUsageDTO;
 import diskusage.WebHostingServerManagementDTO;
+import mail.MailDTO;
+import mail.MailServerInformationDTO;
 import util.ReturnObject;
 import webhosting.ManageWebHostingDTO;
 import webhostingpackage.WebHostingPackageInfoDTO;
@@ -316,6 +318,57 @@ public class WebHostingDAO {
 				ro.setIsSuccessful(true);
 			}
 			
+		}catch(Exception ex){
+			logger.debug("fatal",ex);
+		}finally{
+			try{
+				DatabaseManager.getInstance().freeConnection(connection);
+				
+			}catch(Exception exx){}
+		}		
+		return ro;
+	}
+	
+	@SuppressWarnings("null")
+	public ReturnObject getSMSAndEmailLogMap(String tableName,String condition) {
+		Connection connection = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+		String sql = null;	
+		
+		LinkedHashMap<Long, MailDTO> data = null;
+		MailDTO dto = null;
+		
+		try {
+			connection = DatabaseManager.getInstance().getConnection();			 
+			if(condition==null&&condition.isEmpty()) {
+				condition="";
+			}
+			sql = "select id,sent_to,sent_cc,"
+					+ "sent_subject,sent_body,attachment"					
+					+ "  from "+tableName+" where 1=1 "+condition;
+			
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery(sql);
+			data = new LinkedHashMap<Long, MailDTO>();	
+			while(rs.next()) {
+				dto = new MailDTO();
+				dto.setID(rs.getLong("id"));
+				dto.setToList(rs.getString("sent_to"));
+				dto.setCcList(rs.getString("sent_cc"));
+				dto.setMailSubject(rs.getString("sent_subject"));
+				dto.setMsgText(rs.getString("sent_body"));
+				dto.setAttachmentPath(rs.getString("attachment"));
+				data.put(rs.getLong("id"), dto);
+			}
+			
+			rs.close();
+			stmt.close();
+			
+			if(data != null && data.size() > 0) {
+				ro.setData(data);
+				ro.setIsSuccessful(true);
+			}
 			
 		}catch(Exception ex){
 			logger.debug("fatal",ex);
@@ -324,11 +377,8 @@ public class WebHostingDAO {
 				DatabaseManager.getInstance().freeConnection(connection);
 				
 			}catch(Exception exx){}
-		}
-		
-		
+		}		
 		return ro;
-		
 	}
 	
 	@SuppressWarnings("null")
@@ -428,6 +478,70 @@ public class WebHostingDAO {
 				dto.setApiURL(rs.getString("smAPIURL"));
 				diskUsageDTO.setPercentage(rs.getLong("smDiskUsagePercent"));				
 				dto.setDiskUsageDTO(diskUsageDTO);				
+			}
+			
+			rs.close();
+			stmt.close();
+			
+			
+		}catch(Exception ex){
+			logger.debug("fatal",ex);
+		}finally{
+			try{
+				DatabaseManager.getInstance().freeConnection(connection);
+				
+			}catch(Exception exx){}
+		}
+		
+		
+		return dto;
+		
+	}	
+	 
+	public MailServerInformationDTO getEmailServerInfoDTO() {
+		Connection connection = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+		String sql = null;	
+		MailServerInformationDTO dto = null;
+		 
+		try {
+			connection = DatabaseManager.getInstance().getConnection();		 
+			
+			sql = "select columnName,value from at_universal_table where tableName = 'MailServerInformationDTO'";			
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery(sql);
+			dto = new MailServerInformationDTO();
+			 
+			while(rs.next()) {
+				String colname = rs.getString("columnName");
+				String colVal = rs.getString("value");
+				switch (colname) {
+				   case "authEmailAddesstxt":
+					   dto.setAuthEmailAddesstxt(colVal);
+					   break;
+				   case "authEmailPasstxt":
+					   dto.setAuthEmailPasstxt(colVal);
+					   break;   
+				   case "fromAddresstxt":
+					   dto.setFromAddresstxt(colVal);
+					   break;
+				   case "isActive":
+					   dto.setActive(colVal.equals("1"));
+					   break;
+				   case "mailServertxt":
+					   dto.setMailServertxt(colVal);
+					   break;
+				   case "mailServerPorttxt":
+					   dto.setMailServerPorttxt(colVal);
+					   break;
+				   case "tlsRequired":
+					   dto.setTlsRequired(colVal.equals("1"));
+					   break;
+				   case "authFromServerChk":
+					   dto.setAuthFromServerChk(colVal.equals("1"));
+					   break;
+				}
 			}
 			
 			rs.close();

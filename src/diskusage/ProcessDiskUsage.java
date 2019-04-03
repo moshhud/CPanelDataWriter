@@ -12,6 +12,9 @@ import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
+import common.ApplicationConstants;
+import common.SmsMailLogDAO;
 import cpaneldatawriter.CPanelDataWriterMain;
 import cpaneldatawriter.ClientDataWriter;
 import cpaneldatawriter.WebHostingDAO;
@@ -193,10 +196,36 @@ public class ProcessDiskUsage {
 	}
 	
 	public void sendAlertNotification(WebHostingServerManagementDTO dto) {
-		if(dto.getAlarmThreshold()<=dto.getDiskUsageDTO().getPercentage()) {
-			logger.debug("Disk usage is exceeded for the server: "+dto.getServerName());
-			logger.debug("Alarm(%): "+dto.getAlarmThreshold());
-			logger.debug("Current Usage: "+dto.getDiskUsageDTO().getPercentage());
+		try {
+			if(dto.getAlarmThreshold()<=dto.getDiskUsageDTO().getPercentage()) {
+				logger.debug("Disk usage is exceeded for the server: "+dto.getServerName());
+				logger.debug("Alarm(%): "+dto.getAlarmThreshold());
+				logger.debug("Current Usage: "+dto.getDiskUsageDTO().getPercentage());
+				StringBuilder sb = new StringBuilder();
+				sb.append("Dear Concern,<br>");
+				sb.append("Please check below server and take necessary steps to reduce disk usage: <br><br>");
+				sb.append("Server IP: "+dto.getServerIP()+" <br>");
+				sb.append("Server Name: "+dto.getServerName()+" <br>");
+				sb.append("Current usage(%): "+dto.getDiskUsageDTO().getPercentage()+" <br>");
+				sb.append("Alarm (%): "+dto.getAlarmThreshold()+" <br>");
+				sb.append("<br>");
+				sb.append("Regards,<br>");
+				sb.append("Webhosting Automation Service.");
+				
+				String msgText = sb.toString();
+				String mailBody = new String(msgText.getBytes(),"UTF-8");
+				SmsMailLogDAO log = new SmsMailLogDAO(
+						ApplicationConstants.EMAIL_CONSTANT.MSG_TYPE_EMAIL,
+						ApplicationConstants.EMAIL_CONSTANT.TO, 
+						ApplicationConstants.EMAIL_CONSTANT.FROM, 
+						ApplicationConstants.EMAIL_CONSTANT.SUBJECT+": "+dto.getServerName(),
+						mailBody, 
+						ApplicationConstants.EMAIL_CONSTANT.CC);
+				log.run();
+			}
+		}
+		catch(Exception e) {
+			 logger.fatal("Error : "+e);		  
 		}
 	}
 

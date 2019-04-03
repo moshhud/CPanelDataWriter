@@ -1,4 +1,4 @@
-package diskusage;
+package mail;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -7,33 +7,32 @@ import cpaneldatawriter.CPanelDataWriterMain;
 import cpaneldatawriter.WebHostingDAO;
 import util.ReturnObject;
 
-public class DiskUsageMonitor extends Thread{
-	public static DiskUsageMonitor obDiskUsageMonitor = null;
-	static Logger logger = Logger.getLogger(DiskUsageMonitor.class);
-	boolean running = false;	
+public class MailService extends Thread{
+	public static MailService obMailService = null;
+	static Logger logger = Logger.getLogger(MailService.class);
+	boolean running = false;
 	String ids = "";
-	LinkedHashMap<Long,WebHostingServerManagementDTO> data = null;
-	public static final String WEBHOSTING_SERVER_TABLE_NAME = "at_webhosting_servermanagement";
+	LinkedHashMap<Long,MailDTO> data = null;
+	public static final String SMS_EMAIL_LOG_TABLE = "at_sms_and_mail_log";
 	
-	public static DiskUsageMonitor getInstance(){
-		if(obDiskUsageMonitor==null) {
+	public static MailService getInstance(){
+		if(obMailService==null) {
 			createInstance();
 		}
-		return obDiskUsageMonitor;
+		return obMailService;
 	}
 	
-	public static synchronized  DiskUsageMonitor createInstance() {
-		if(obDiskUsageMonitor==null) {
-			obDiskUsageMonitor = new DiskUsageMonitor();
+	public static synchronized MailService createInstance() {
+		if(obMailService==null) {
+			obMailService = new MailService();
 		}
-		return obDiskUsageMonitor;
-		
+		return obMailService;
 	}
 	
 	@Override
 	public void run(){
 		running = true;
-		logger.debug("Disk usage monitoring service started.");
+		logger.debug("Client Service started.");
 		long t1=0L,t2=0L;
 		
 		while(running)
@@ -43,45 +42,42 @@ public class DiskUsageMonitor extends Thread{
 				ReturnObject ro = new ReturnObject();
 				ro = getData();
 				if(ro.getIsSuccessful()) {
-					ProcessDiskUsage pdu = new ProcessDiskUsage();
-					boolean status = pdu.processData(data);
-					if(status) {						
-						logger.debug("Data writing completed successfully");
-						data=null;
-						ids="";	
-						
+					for(MailDTO dto : data.values()) {
+						logger.debug("Sending email for ID: "+dto.getID());
+						dto.setHtmlMail(true);
+						MailSend mailSend = MailSend.getInstance();
+						mailSend.sendMailWithContentAndSubject(dto);
 					}
 				}
-								
+				
 				t2 = System.currentTimeMillis();				
-				logger.debug("Time to finish client service job(ms): "+(t2-t1));
-				Thread.sleep(60000);
+				logger.debug("Time to finish Email service job(ms): "+(t2-t1));
+				Thread.sleep(CPanelDataWriterMain.interval);
+				
 				
 			}
 			catch(Exception e){
 		   	  	 logger.fatal("Error : "+e);		   	  	  
 		   	}
-			
-			
         }
-	}	
-	
+	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public ReturnObject getData() {
 		ReturnObject ro = new ReturnObject();
 		WebHostingDAO dao = new WebHostingDAO();
-		
+		data = null;
+		ids = "";
 		try {
-			ro = dao.getIDList(WEBHOSTING_SERVER_TABLE_NAME,"smID"," AND smIsBlocked=0  and smAPIURL is not null");
+			ro = dao.getIDList(SMS_EMAIL_LOG_TABLE,"id"," and request_generated_from='webhosting jar' and status='pending' ");
 			if(ro != null && ro.getIsSuccessful()) {
 				ArrayList<Long> IDList = (ArrayList)ro.getData();
 				if(IDList!=null&&IDList.size()>0) {
 					ids = dao.getStringFromArrayList(IDList, false);
 					logger.debug(ids);
-					ro = dao.getWebHostingServerInfoMap(WEBHOSTING_SERVER_TABLE_NAME, " and smID in("+ids+") ");
+					ro = dao.getSMSAndEmailLogMap(SMS_EMAIL_LOG_TABLE, " and id in("+ids+") ");
 					if (ro != null && ro.getIsSuccessful() && ro.getData() instanceof LinkedHashMap) {
-						data = (LinkedHashMap<Long, WebHostingServerManagementDTO>)ro.getData();
+						data = (LinkedHashMap<Long, MailDTO>)ro.getData();
 						if (data != null && data.size() > 0) {
 							ro = ReturnObject.clearInstance(ro);
 							ro.setIsSuccessful(true);

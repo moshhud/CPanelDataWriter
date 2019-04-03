@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import diskusage.DiskUsageMonitor;
+import mail.MailService;
 import shutdown.ShutDownListener;
 import shutdown.ShutDownService;
 
@@ -17,6 +18,7 @@ public class CPanelDataWriterMain  implements ShutDownListener{
 	public static PackageDataWriter obPackageDataWriter = null;
 	public static ClientDataWriter obClientDataWriter = null;
 	public static DiskUsageMonitor obDiskUsageMonitor = null;
+	public static MailService obMailService = null;
 	public static long interval = 60;
 	public static String API = "https://mail.btcl.com.bd:2087";
 	public static String API_TYPE = "/json-api/";
@@ -37,6 +39,9 @@ public class CPanelDataWriterMain  implements ShutDownListener{
 		
 		obDiskUsageMonitor = DiskUsageMonitor.getInstance();
 		obDiskUsageMonitor.start();
+		
+		obMailService = MailService.getInstance();
+		obMailService.start();
 		
 		ShutDownService.getInstance().addShutDownListener(ob);		
 		logger.debug("Cpanel Data Writer started successfully.");
