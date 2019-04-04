@@ -32,7 +32,7 @@ public class ProcessClientWritingRequest {
 		try {
 			if(data!=null && data.size()>0) {
 				for(ManageWebHostingDTO dto :data.values()) {					
-					if(sendRequest(dto)) {
+					if(sendRequest(dto)) {	
 						updateStatus(dto.getID()+"");
 						status = true;
 					}
@@ -49,35 +49,36 @@ public class ProcessClientWritingRequest {
 	public boolean sendRequest(ManageWebHostingDTO dto){
 		logger.debug(dto.getUserName());
 		boolean status = false;
-		boolean isExistingClient = false;
 		String API = null;
 		try {
 			int methodType = dto.getCpanelWrittingStatus();
 			int index=0;
 			switch (methodType) {
-		     case 1:
+		     case ApplicationConstants.CPANEL_ACCOUNT.CREATE_ACCOUNT:
 		    	 index=0;
-		    	 API = getRandomlySelectedServerAPI();					
+		    	 dto.setServerID(getRandomlySelectedServer());				
 		    	 break;			    	 
-		     case 2:
+		     case ApplicationConstants.CPANEL_ACCOUNT.SUSPEND_ACCOUNT:
 		    	 index=1;
-		    	 isExistingClient=true;
 		    	  break;
-		     case 3:
+		     case ApplicationConstants.CPANEL_ACCOUNT.UNSUSPEND_ACCOUNT:
 		    	 index=2;
-		    	 isExistingClient=true;
 		    	 break;
-		     case 4:
+		     case ApplicationConstants.CPANEL_ACCOUNT.PACKAGE_CHANGE:
 		    	 index=3;
-		    	 isExistingClient=true;
 		    	 break;			     
 		    }
-			
-			if(isExistingClient) {
-				WebHostingDAO dao = new WebHostingDAO();
-		    	WebHostingServerManagementDTO serverDTO = dao.getWebHostingServerInfoDTO(DiskUsageMonitor.WEBHOSTING_SERVER_TABLE_NAME, " and smID="+dto.getServerID());
-		    	API = serverDTO.getApiURL();
-			}
+						
+	    	WebHostingServerManagementDTO serverDTO = null;	    	
+	    	if(dto.getServerID()>0) {
+	    		WebHostingDAO dao = new WebHostingDAO();
+	    		serverDTO = dao.getWebHostingServerInfoDTO(DiskUsageMonitor.WEBHOSTING_SERVER_TABLE_NAME, " and smID="+dto.getServerID());
+	    	}
+	    	
+	    	if(serverDTO!=null) {
+	    		API = serverDTO.getApiURL();
+	    	}
+	    	
 			if(API==null) {
 				API = CPanelDataWriterMain.API;
 			}
@@ -88,7 +89,7 @@ public class ProcessClientWritingRequest {
 			HttpsURLConnection con=(HttpsURLConnection)url.openConnection();
 			con.setDoInput(true);
 			con.setDoOutput(true);
-			con.setRequestProperty("Authorization", getHeaderValue());
+			con.setRequestProperty("Authorization", getHeaderValue(serverDTO.getApiLogin(),serverDTO.getApiToken()));
 			con.setRequestMethod("POST");
 			con.setUseCaches(false);
 			
@@ -130,11 +131,14 @@ public class ProcessClientWritingRequest {
 			String response = getResponseStatus(sb.toString());
 			String arr[] = response.split(":");
 			if(arr[1].equals("1")) {
-				status = true;
-				if(methodType==1) {
+				status = true;				
+				if(methodType==1) {					
+					status = setServerID(dto.getID(),dto.getServerID());					 
 					sendEMailToClient(dto,API);
 				}
 				
+			}else {
+				//send notification if failed to complete process successfully
 			}
 		
 			
@@ -158,6 +162,23 @@ public class ProcessClientWritingRequest {
 			 logger.fatal("Error : "+e);
 		  
 		}
+	}
+	
+	public boolean setServerID(Long id, Long serverID) {
+		 
+		ReturnObject ro = new ReturnObject();
+		try {
+			WebHostingDAO dao = new WebHostingDAO();
+			ro = dao.setWebHostingServerID(id,serverID,ClientDataWriter.WEBHOSTING_TABLE_NAME);
+			if(ro.getIsSuccessful()) {
+				logger.debug("Server id: "+serverID+" Updated successfully for : "+id);
+			}
+		}catch(Exception e) {
+			 logger.fatal("Error : "+e);
+		  
+		}
+		 
+		return ro.getIsSuccessful();
 	}
 	
 	public void sendEMailToClient(ManageWebHostingDTO dto,String API) {
@@ -216,14 +237,20 @@ public class ProcessClientWritingRequest {
 		return responseStatus;
 	}
 		
-	public String getHeaderValue() {
-		String authorization = "whm "+ CPanelDataWriterMain.login+":"+ CPanelDataWriterMain.token;
+	public String getHeaderValue(String login, String token) {
+		
+		if(login==null||token==null) {
+			login = CPanelDataWriterMain.login;
+			token = CPanelDataWriterMain.token;
+		}
+		
+		String authorization = "whm "+ login+":"+ token;
 		return authorization;
 	}
 	
 	@SuppressWarnings("unchecked")
-	public String getRandomlySelectedServerAPI() {
-		String API = null;
+	public Long getRandomlySelectedServer() {		 
+		Long serverID = 0L;
 		try {
 			LinkedHashMap<Long,WebHostingServerManagementDTO> serverData = null;
 			 ReturnObject ro = new ReturnObject();
@@ -242,14 +269,15 @@ public class ProcessClientWritingRequest {
 						 }
 					}
 				}
-			 if(ids.size()>0) {
-				 WebHostingServerManagementDTO serverDTO = null;
+			 if(ids.size()>0) {				
 				 Random random = new Random();
 				 int  n = random.nextInt(ids.size());				 
-				 long id = ids.get(n);			
+				 long id = ids.get(n);
+				 serverID = id;
 				 logger.debug("Selected Server ID: "+id);
-				 serverDTO = serverData.get(id);				 
-				 API = serverDTO.getApiURL();
+				 //WebHostingServerManagementDTO serverDTO = null;
+				 //serverDTO = serverData.get(id);				 
+				 //API = serverDTO.getApiURL();
 			 }
 		}
 		catch(Exception e) {
@@ -257,7 +285,7 @@ public class ProcessClientWritingRequest {
 			  
 		}
 		
-		return API;
+		return serverID;
 	}
 	
 

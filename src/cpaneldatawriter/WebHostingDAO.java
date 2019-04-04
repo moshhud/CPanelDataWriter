@@ -241,6 +241,37 @@ public class WebHostingDAO {
 		return ro;
 	}
 	
+	public ReturnObject setWebHostingServerID(Long id,Long serverID,String tableName) {
+		Connection connection = null;
+		PreparedStatement pstmt = null;
+		String sql = null;
+		
+		try {
+			sql = "UPDATE "+tableName +" set whServerID=?,whUserPass=? where whID=?";
+			connection = DatabaseManager.getInstance().getConnection();
+			pstmt = (PreparedStatement) connection.prepareStatement(sql);
+			int i=1;
+			pstmt.setLong(i++, serverID);
+			pstmt.setString(i++, "nopassword");
+			pstmt.setLong(i++, id);
+			
+			if (pstmt.executeUpdate() > 0) {
+				ro.clear();
+				ro.setIsSuccessful(true);
+			}
+			
+		}catch (Exception e) {
+			logger.fatal("Error : "+e);
+		}finally {			
+			try{
+				DatabaseManager.getInstance().freeConnection(connection);
+				
+			}catch(Exception exx){}
+		}
+		
+		return ro;
+	}
+	
 	public ReturnObject updateWebHostingServerDiskUsage(DiskUsageDTO diskUsageDTO,String tableName) {
 		Connection connection = null;
 		PreparedStatement pstmt = null;
@@ -397,7 +428,7 @@ public class WebHostingDAO {
 				condition="";
 			}
 			sql = "select smID,smServerName,smServerIP,"
-					+ "smOSType,smMaxAllowed,smAlarmThreshold,smNotification,smAPIURL,"
+					+ "smOSType,smMaxAllowed,smAlarmThreshold,smNotification,smAPIURL,smLogin,smToken,"
 					+ "smDiskUsagePercent"
 					+ "  from "+tableName+" where 1=1 "+condition;
 			
@@ -415,6 +446,8 @@ public class WebHostingDAO {
 				dto.setAlarmThreshold(rs.getInt("smAlarmThreshold"));
 				dto.setNotification(rs.getInt("smNotification"));
 				dto.setApiURL(rs.getString("smAPIURL"));
+				dto.setApiLogin(rs.getString("smLogin"));
+				dto.setApiToken(rs.getString("smToken"));
 				diskUsageDTO.setPercentage(rs.getLong("smDiskUsagePercent"));				
 				dto.setDiskUsageDTO(diskUsageDTO);
 				data.put(rs.getLong("smID"), dto);

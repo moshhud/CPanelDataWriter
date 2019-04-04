@@ -14,7 +14,25 @@ public class WebHostingServerManagementDTO{
 	int isBlocked;	
 	String apiURL;
 	long diskUsagePercent;
+	String apiLogin;
+	String apiToken;
 	
+	public String getApiLogin() {
+		return apiLogin;
+	}
+
+	public void setApiLogin(String apiLogin) {
+		this.apiLogin = apiLogin;
+	}
+
+	public String getApiToken() {
+		return apiToken;
+	}
+
+	public void setApiToken(String apiToken) {
+		this.apiToken = apiToken;
+	}
+
 	DiskUsageDTO diskUsageDTO;
 			
 	public DiskUsageDTO getDiskUsageDTO() {

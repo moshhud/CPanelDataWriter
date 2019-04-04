@@ -63,7 +63,7 @@ public class ClientDataWriter extends Thread{
 	
 	public void shutdown()
 	{
-		logger.debug("Server shuting down");			
+		 			
 	    running = false;	    
 	 }
 	
@@ -92,7 +92,7 @@ public class ClientDataWriter extends Thread{
 			}
 			else {
 				ro.setIsSuccessful(false);
-				logger.debug("No data found to write into cpanel");
+				logger.debug("No data found");
 			}
 		}
 		catch (Exception ex)

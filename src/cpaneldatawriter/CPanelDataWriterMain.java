@@ -51,6 +51,9 @@ public class CPanelDataWriterMain  implements ShutDownListener{
 	public void shutDown() {
 		// TODO Auto-generated method stub
 		obPackageDataWriter.shutdown();
+		obClientDataWriter.shutdown();
+		obDiskUsageMonitor.shutdown();
+		obMailService.shutdown();
 		logger.debug("Shut down server successfully");
 		System.exit(0);
 	}

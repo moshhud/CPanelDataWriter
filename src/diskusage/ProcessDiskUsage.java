@@ -47,7 +47,6 @@ public class ProcessDiskUsage {
 						updateStatus(diskUsageDTO);
 						status = true;	
 						
-						//need to add notification manager to send alert 
 						if(dto.getNotification()==1) {
 							sendAlertNotification(dto);
 						}
@@ -74,7 +73,7 @@ public class ProcessDiskUsage {
 			HttpsURLConnection con=(HttpsURLConnection)url.openConnection();
 			con.setDoInput(true);
 			con.setDoOutput(true);
-			con.setRequestProperty("Authorization", getHeaderValue());
+			con.setRequestProperty("Authorization", getHeaderValue(dto.getApiLogin(),dto.getApiToken()));
 			con.setRequestMethod("POST");
 			con.setUseCaches(false);
 			
@@ -176,8 +175,12 @@ public class ProcessDiskUsage {
 		return responseStatus;
 	}
 	
-	public String getHeaderValue() {
-		String authorization = "whm "+ CPanelDataWriterMain.login+":"+ CPanelDataWriterMain.token;
+    public String getHeaderValue(String login, String token) {		
+		if(login==null||token==null) {
+			login = CPanelDataWriterMain.login;
+			token = CPanelDataWriterMain.token;
+		}		
+		String authorization = "whm "+ login+":"+ token;
 		return authorization;
 	}
 	

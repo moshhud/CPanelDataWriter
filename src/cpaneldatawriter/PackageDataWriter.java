@@ -129,7 +129,7 @@ public class PackageDataWriter extends Thread{
 			}
 			else {
 				ro.setIsSuccessful(false);
-				logger.debug("No data found to write into cpanel");
+				logger.debug("No data found");
 			}
 		}
 		catch (Exception ex)

@@ -47,6 +47,8 @@ public class MailService extends Thread{
 						dto.setHtmlMail(true);
 						MailSend mailSend = MailSend.getInstance();
 						mailSend.sendMailWithContentAndSubject(dto);
+						data = null;
+						ids = "";
 					}
 				}
 				
@@ -65,9 +67,7 @@ public class MailService extends Thread{
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public ReturnObject getData() {
 		ReturnObject ro = new ReturnObject();
-		WebHostingDAO dao = new WebHostingDAO();
-		data = null;
-		ids = "";
+		WebHostingDAO dao = new WebHostingDAO();		
 		try {
 			ro = dao.getIDList(SMS_EMAIL_LOG_TABLE,"id"," and request_generated_from='webhosting jar' and status='pending' ");
 			if(ro != null && ro.getIsSuccessful()) {
@@ -88,7 +88,7 @@ public class MailService extends Thread{
 			}
 			else {
 				ro.setIsSuccessful(false);
-				logger.debug("No data found to write into cpanel");
+				logger.debug("No data found");
 			}
 		}
 		catch (Exception ex)
@@ -99,5 +99,10 @@ public class MailService extends Thread{
 		
 		return ro;
 	}
+	
+	public void shutdown()
+	{		 	
+	    running = false;	    
+	 }
 
 }

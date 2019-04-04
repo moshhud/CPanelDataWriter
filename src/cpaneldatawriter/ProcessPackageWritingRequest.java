@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import common.ApplicationConstants;
 import diskusage.DiskUsageMonitor;
 import diskusage.WebHostingServerManagementDTO;
 import util.ReturnObject;
@@ -45,7 +46,7 @@ public class ProcessPackageWritingRequest {
 					if(serverData!=null && serverData.size()>0) {
 						for(WebHostingServerManagementDTO serverDTO:serverData.values()) {
 							logger.debug("Server ID: "+serverDTO.getID());
-							status = sendRequest(dto,serverDTO.getApiURL());
+							status = sendRequest(dto,serverDTO);
 						}
 					}
 					
@@ -64,19 +65,20 @@ public class ProcessPackageWritingRequest {
 		return status;
 	}
 	
-	public boolean sendRequest(WebHostingPackageInfoDTO dto,String API){
-		boolean status = false;		
+	public boolean sendRequest(WebHostingPackageInfoDTO dto ,WebHostingServerManagementDTO serverDTO){
+		boolean status = false;	
+		String API = serverDTO.getApiURL();
 		try{
 			int methodType = dto.getCpanelWrittingStatus();
 			int index=0;
 			switch (methodType) {
-			     case 1:
+			     case ApplicationConstants.CPANEL_PACKAGE.ADD:
 			    	 index=0;
 			    	 break;			    	 
-			     case 2:
+			     case ApplicationConstants.CPANEL_PACKAGE.EDIT:
 			    	 index=1;			    	
 			    	 break;
-			     case 3:
+			     case ApplicationConstants.CPANEL_PACKAGE.DELETE:
 			    	 index=2;
 			    	 break;
 			     default:
@@ -95,7 +97,7 @@ public class ProcessPackageWritingRequest {
 			HttpsURLConnection con=(HttpsURLConnection)url.openConnection();
 			con.setDoInput(true);
 			con.setDoOutput(true);
-			con.setRequestProperty("Authorization", getHeaderValue());
+			con.setRequestProperty("Authorization", getHeaderValue(serverDTO.getApiLogin(),serverDTO.getApiToken()));
 			con.setRequestMethod("POST");
 			con.setUseCaches(false);
 			
@@ -196,8 +198,12 @@ public class ProcessPackageWritingRequest {
 		return responseStatus;
 	}
 	
-	public String getHeaderValue() {
-		String authorization = "whm "+ CPanelDataWriterMain.login+":"+ CPanelDataWriterMain.token;
+	public String getHeaderValue(String login, String token) {		
+		if(login==null||token==null) {
+			login = CPanelDataWriterMain.login;
+			token = CPanelDataWriterMain.token;
+		}		
+		String authorization = "whm "+ login+":"+ token;
 		return authorization;
 	}
 

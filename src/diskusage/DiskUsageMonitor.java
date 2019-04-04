@@ -92,7 +92,7 @@ public class DiskUsageMonitor extends Thread{
 			}
 			else {
 				ro.setIsSuccessful(false);
-				logger.debug("No data found to write into cpanel");
+				logger.debug("No data found");
 			}
 		}
 		catch (Exception ex)
@@ -103,5 +103,10 @@ public class DiskUsageMonitor extends Thread{
 		
 		return ro;
 	}
+	
+	public void shutdown()
+	{		 	
+	    running = false;	    
+	 }
 
 }
