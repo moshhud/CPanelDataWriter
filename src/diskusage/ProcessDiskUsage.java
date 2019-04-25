@@ -16,9 +16,9 @@ import org.json.simple.parser.JSONParser;
 import common.ApplicationConstants;
 import common.SmsMailLogDAO;
 import cpaneldatawriter.CPanelDataWriterMain;
-import cpaneldatawriter.ClientDataWriter;
 import cpaneldatawriter.WebHostingDAO;
 import util.ReturnObject;
+import util.SSLCertificate;
 
 
 public class ProcessDiskUsage {
@@ -62,11 +62,15 @@ public class ProcessDiskUsage {
 		return status;
 	}
 	
+	
+	
+	
 	public boolean sendRequest(WebHostingServerManagementDTO dto){
 		
 		boolean status = false;
 		try {
-			
+			SSLCertificate ssl = new SSLCertificate();
+			ssl.setSSL();
 			String API_URL = dto.getApiURL()+CPanelDataWriterMain.API_TYPE+method[0];
 			logger.debug("Calling: "+API_URL);
 			URL url=new URL(API_URL);

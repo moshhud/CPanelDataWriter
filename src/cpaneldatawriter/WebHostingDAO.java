@@ -247,7 +247,7 @@ public class WebHostingDAO {
 		String sql = null;
 		
 		try {
-			sql = "UPDATE "+tableName +" set whServerID=?,whUserPass=? where whID=?";
+			sql = "UPDATE "+tableName +" set whServerID=?,whUserPass=? where whID=?";			 
 			connection = DatabaseManager.getInstance().getConnection();
 			pstmt = (PreparedStatement) connection.prepareStatement(sql);
 			int i=1;
@@ -322,7 +322,7 @@ public class WebHostingDAO {
 				condition="";
 			}
 			sql = "select whID,whDomain,whEmail,"
-					+ "whUserName,whUserPass,whPackageID,webPackName,whWriteCPanel"					
+					+ "whUserName,whUserPass,whPackageID,webPackName,whWriteCPanel,whServerID,whClientType "					
 					+ "  from "+tableName+",at_webhosting_package where webPackID=whPackageID "+condition;
 			
 			stmt = connection.createStatement();
@@ -338,6 +338,8 @@ public class WebHostingDAO {
 				dto.setPackageID(rs.getLong("whPackageID"));
 				dto.setPackageName(rs.getString("webPackName"));
 				dto.setCpanelWrittingStatus(rs.getInt("whWriteCPanel"));
+				dto.setServerID(rs.getLong("whServerID"));
+				dto.setClientType(rs.getInt("whClientType"));
 				data.put(rs.getLong("whID"), dto);
 			}
 			
@@ -492,7 +494,7 @@ public class WebHostingDAO {
 			}
 			sql = "select smID,smServerName,smServerIP,"
 					+ "smOSType,smMaxAllowed,smAlarmThreshold,smNotification,smAPIURL,"
-					+ "smDiskUsagePercent"
+					+ "smDiskUsagePercent,smLogin,smToken"
 					+ "  from "+tableName+" where 1=1 "+condition;
 			
 			stmt = connection.createStatement();
@@ -509,6 +511,8 @@ public class WebHostingDAO {
 				dto.setAlarmThreshold(rs.getInt("smAlarmThreshold"));
 				dto.setNotification(rs.getInt("smNotification"));
 				dto.setApiURL(rs.getString("smAPIURL"));
+				dto.setApiLogin(rs.getString("smLogin"));
+				dto.setApiToken(rs.getString("smToken"));
 				diskUsageDTO.setPercentage(rs.getLong("smDiskUsagePercent"));				
 				dto.setDiskUsageDTO(diskUsageDTO);				
 			}

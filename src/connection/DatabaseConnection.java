@@ -95,6 +95,7 @@ public class DatabaseConnection {
 
 		}
 	}
+	@SuppressWarnings("unused")
 	private void deallocateMemory(){
 		stmtList.clear();
 		psList.clear();

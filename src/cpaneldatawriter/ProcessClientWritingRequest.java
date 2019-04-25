@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,13 +19,14 @@ import common.SmsMailLogDAO;
 import diskusage.DiskUsageMonitor;
 import diskusage.WebHostingServerManagementDTO;
 import util.ReturnObject;
+import util.SSLCertificate;
 import webhosting.ManageWebHostingDTO;
 
 
 
 public class ProcessClientWritingRequest {
 	static Logger logger = Logger.getLogger(ProcessClientWritingRequest.class);
-	String method[] = {"createacct","suspendacct","unsuspendacct","changepackage"};
+	String method[] = {"createacct","suspendacct","unsuspendacct","changepackage","setupreseller","setacls"};
 	int api_version = 1;
 	
 	public  boolean processData(LinkedHashMap<Long, ManageWebHostingDTO> data) {
@@ -47,7 +49,7 @@ public class ProcessClientWritingRequest {
 	}
 	
 	public boolean sendRequest(ManageWebHostingDTO dto){
-		logger.debug(dto.getUserName());
+		logger.debug(dto.getUserName()+","+dto.getServerID());
 		boolean status = false;
 		String API = null;
 		try {
@@ -82,8 +84,13 @@ public class ProcessClientWritingRequest {
 			if(API==null) {
 				API = CPanelDataWriterMain.API;
 			}
+			
+			SSLCertificate ssl = new SSLCertificate();
+			ssl.setSSL();
+			
 			String API_URL = API+CPanelDataWriterMain.API_TYPE+method[index];
 			logger.debug("Calling: "+API_URL);
+			
 			
 			URL url=new URL(API_URL);
 			HttpsURLConnection con=(HttpsURLConnection)url.openConnection();
@@ -98,23 +105,23 @@ public class ProcessClientWritingRequest {
 			
 			if(index==0) {
 				writer.write("&ip=n");
-				writer.write("&domain="+dto.getDomain());
-				writer.write("&plan="+dto.getPackageName());
-				writer.write("&username="+dto.getUserName());
-				writer.write("&password="+dto.getUserPass());
-				writer.write("&contactemail="+dto.getEmail());				
-				writer.write("&reseller="+dto.getClientType());
+				writer.write("&domain="+getEncodedValue(dto.getDomain()));
+				writer.write("&plan="+getEncodedValue(dto.getPackageName()));
+				writer.write("&username="+getEncodedValue(dto.getUserName()));
+				writer.write("&password="+getEncodedValue(dto.getUserPass()));
+				writer.write("&contactemail="+getEncodedValue(dto.getEmail()));				
+				writer.write("&reseller="+getEncodedValue(dto.getClientType()+""));
 				
 			}
 			else if(index==1) {
-				writer.write("&user="+dto.getUserName());
+				writer.write("&user="+getEncodedValue(dto.getUserName()));
 				writer.write("&reason=Admin suspended the service");
 			}
 			else if(index==2) {
-				writer.write("&user="+dto.getUserName());				
+				writer.write("&user="+getEncodedValue(dto.getUserName()));			
 			}
 			else if(index==3) {
-				writer.write("&user="+dto.getUserName());	
+				writer.write("&user="+getEncodedValue(dto.getUserName()));
 				writer.write("&pkg="+dto.getPackageName());
 			}
 			
@@ -129,16 +136,23 @@ public class ProcessClientWritingRequest {
 			reader.close();
 			
 			String response = getResponseStatus(sb.toString());
+			logger.debug("response: "+response);
 			String arr[] = response.split(":");
 			if(arr[1].equals("1")) {
 				status = true;				
 				if(methodType==1) {					
-					status = setServerID(dto.getID(),dto.getServerID());					 
+					status = setServerID(dto.getID(),dto.getServerID());
+					if(dto.getClientType()==1) {
+						if(setResellerACL(dto,serverDTO)) {
+							logger.debug("Reseller ACL Permission added.");
+						}
+					}
 					sendEMailToClient(dto,API);
 				}
 				
 			}else {
 				//send notification if failed to complete process successfully
+				logger.debug("Failed: "+response);
 			}
 		
 			
@@ -148,6 +162,80 @@ public class ProcessClientWritingRequest {
 		 }
 		
 		return status;
+	}
+	
+	public boolean setResellerACL(ManageWebHostingDTO dto,WebHostingServerManagementDTO serverDTO){
+		boolean status = false;
+		String API = "";
+		try {
+			SSLCertificate ssl = new SSLCertificate();
+			ssl.setSSL();
+			int index = ApplicationConstants.CPANEL_ACCOUNT.ACL_SETUP-1;
+			API = serverDTO.getApiURL();
+			String API_URL = API+CPanelDataWriterMain.API_TYPE+method[index];
+			logger.debug("Calling(ACL): "+API_URL);
+			
+			
+			URL url=new URL(API_URL);
+			HttpsURLConnection con=(HttpsURLConnection)url.openConnection();
+			con.setDoInput(true);
+			con.setDoOutput(true);
+			con.setRequestProperty("Authorization", getHeaderValue(serverDTO.getApiLogin(),serverDTO.getApiToken()));
+			con.setRequestMethod("POST");
+			con.setUseCaches(false);
+			
+			PrintWriter writer=new PrintWriter(con.getOutputStream());
+			writer.write("&api.version="+api_version);
+			writer.write("&reseller="+getEncodedValue(dto.getUserName()));
+			writer.write("&acl-add-pkg=1");
+			writer.write("&acl-edit-pkg=1");
+			writer.write("&acl-list-pkgs=1");
+			writer.write("&acl-list-accts=1");
+			writer.write("&acl-acct-summary=1");
+			writer.write("&acl-create-acct=1");
+			writer.write("&acl-suspend-acct=1");
+			writer.write("&acl-passwd=1");
+			writer.write("&acl-upgrade-account=1");
+			writer.write("&acl-kill-acct=1");
+			writer.write("&acl-edit-account=1");
+			writer.write("&acl-mailcheck=1");
+			writer.write("&acl-show-bandwidth=1");
+			
+			writer.flush();			
+			BufferedReader reader=new BufferedReader(new InputStreamReader(con.getInputStream()));
+			
+			String line="";
+			StringBuilder sb = new StringBuilder();
+			while((line=reader.readLine())!=null){
+				sb.append(line+"\n");				
+			}			
+			reader.close();
+			
+			String response = getResponseStatus(sb.toString());
+			logger.debug("Response: "+response);
+			String arr[] = response.split(":");
+			if(arr[1].equals("1")) {
+				status = true;			
+			}
+			
+		}
+		catch(Exception e){
+			logger.fatal("Error: "+e.toString());
+		 }
+		
+		return status;
+	}
+	
+	public String getEncodedValue(String text) {
+		String str = "";
+		try{
+			str = URLEncoder.encode(text,"utf-8");		     
+		}
+		catch(Exception e){
+			logger.fatal(e.toString());
+		}
+		
+		return str;
 	}
 	
 	public void updateStatus(String id) {
@@ -183,11 +271,21 @@ public class ProcessClientWritingRequest {
 	
 	public void sendEMailToClient(ManageWebHostingDTO dto,String API) {
 		try {
+			String API2="";
+			logger.debug("dto.getClientType(): "+dto.getClientType());
+			if(dto.getClientType()==1) {
+				API2 = API.replace(ApplicationConstants.CPANEL_WHM_PORT.WHM_ADMIN+"", ApplicationConstants.CPANEL_WHM_PORT.WHM_RESELLER+"");
+			}
+			else {
+				API2 = API.replace(ApplicationConstants.CPANEL_WHM_PORT.WHM_ADMIN+"", ApplicationConstants.CPANEL_WHM_PORT.WHM_ENDUSER_2+"");
+			}
 			StringBuilder sb = new StringBuilder();
 			sb.append("Dear Sir/Madam,<br>");
 			sb.append("Congratulations!!!<br>");
 			sb.append("Your cpanel account activated with below credentials: <br><br>");
-			sb.append("Login URL: "+API+" <br>");
+			sb.append("Login URL: <br>");
+			sb.append(API+" <br>");
+			sb.append(API2+" <br>");
 			sb.append("User Name: "+dto.getUserName()+" <br>");
 			sb.append("Password: "+dto.getUserPass()+" <br>");
 			 

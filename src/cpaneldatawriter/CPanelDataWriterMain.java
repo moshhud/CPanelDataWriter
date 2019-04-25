@@ -20,6 +20,7 @@ public class CPanelDataWriterMain  implements ShutDownListener{
 	public static DiskUsageMonitor obDiskUsageMonitor = null;
 	public static MailService obMailService = null;
 	public static long interval = 60;
+	public static long emailCheck = 60;
 	public static String API = "https://mail.btcl.com.bd:2087";
 	public static String API_TYPE = "/json-api/";
 	public static String login = "root";
@@ -45,6 +46,7 @@ public class CPanelDataWriterMain  implements ShutDownListener{
 		
 		ShutDownService.getInstance().addShutDownListener(ob);		
 		logger.debug("Cpanel Data Writer started successfully.");
+		 
 	}
 
 	@Override
@@ -88,6 +90,18 @@ public class CPanelDataWriterMain  implements ShutDownListener{
 		        }
 		        interval = interval*1000;
 		        logger.debug("Interval: "+interval);
+		        
+		        
+		        if(properties.get("emailCheck")!=null){
+		        	strInterval =  (String) properties.get("emailCheck");
+		        	if(strInterval!=null&&strInterval.length()>0) {
+		        		emailCheck = Long.parseLong(strInterval);
+		        	}
+		        	
+		        	
+		        }
+		        emailCheck = emailCheck*1000;
+		        logger.debug("emailCheck interval: "+emailCheck);
 		        
 		        fileInputStream.close();
 

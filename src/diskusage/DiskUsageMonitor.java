@@ -3,7 +3,6 @@ package diskusage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import org.apache.log4j.Logger;
-import cpaneldatawriter.CPanelDataWriterMain;
 import cpaneldatawriter.WebHostingDAO;
 import util.ReturnObject;
 
@@ -107,6 +106,6 @@ public class DiskUsageMonitor extends Thread{
 	public void shutdown()
 	{		 	
 	    running = false;	    
-	 }
+	}
 
 }

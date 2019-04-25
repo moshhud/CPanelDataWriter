@@ -19,6 +19,8 @@ public class ApplicationConstants {
 		public static final int SUSPEND_ACCOUNT = 2;
 		public static final int UNSUSPEND_ACCOUNT = 3;
 		public static final int PACKAGE_CHANGE = 4;
+		public static final int RESELLER_SETUP = 5;
+		public static final int ACL_SETUP = 6;
 	}
 
 	public static class CPANEL_PACKAGE
@@ -26,5 +28,14 @@ public class ApplicationConstants {
 		public static final int ADD = 1;
 		public static final int EDIT = 2;
 		public static final int DELETE = 3;
+	}
+	
+	public static class CPANEL_WHM_PORT
+	{
+		public static final int WHM_ADMIN = 2087;
+		public static final int WHM_RESELLER = 2083;
+		public static final int WHM_ENDUSER_1 = 2095;
+		public static final int WHM_ENDUSER_2 = 2096;
+		
 	}
 }

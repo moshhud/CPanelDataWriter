@@ -119,6 +119,7 @@ public class MailSend extends Thread {
 					}
 				}
 			}
+			
 			Properties props = new Properties();
 			Authenticator authenticator = null;
 			
@@ -128,11 +129,9 @@ public class MailSend extends Thread {
 			props.setProperty("mail.smtp.auth", "" + mailServerInformationDTO.isAuthFromServerChk());
 			props.setProperty("mail.smtp.host", mailServerInformationDTO.getMailServertxt());
 			props.setProperty("mail.smtp.port", mailServerInformationDTO.getMailServerPorttxt());
-			 
-			if( mailServerInformationDTO.isTlsRequired() ){
-				props.setProperty("mail.smtp.starttls.enable", "true" ); 
-				logger.debug( "Starting TLS" );
-			}		
+			props.setProperty("mail.smtp.starttls.enable", ""+mailServerInformationDTO.isTlsRequired() ); 			
+			props.setProperty("mail.transport.protocol", "smtp");
+							
 			Session session = Session.getInstance(props, authenticator);		
 			session.setDebug(false);
 			
@@ -172,7 +171,7 @@ public class MailSend extends Thread {
 				Multipart multipart = new MimeMultipart();
 				multipart.addBodyPart(messageBodyPart);
 	
-				addAttachments(attachment, multipart, "Offer Rates.csv");
+				addAttachments(attachment, multipart, "abc.csv");
 				msg.setContent(multipart);
 			}
 			else
@@ -197,7 +196,8 @@ public class MailSend extends Thread {
 				
 			} 
 			catch (Exception ex) {
-				logger.debug(ex.getMessage());
+				//logger.debug(ex.getMessage());
+				logger.debug(ex.toString());
 			}			
 
 	   } 

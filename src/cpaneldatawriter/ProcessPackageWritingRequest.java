@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.util.Iterator;
+import java.net.URLEncoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -18,6 +18,7 @@ import common.ApplicationConstants;
 import diskusage.DiskUsageMonitor;
 import diskusage.WebHostingServerManagementDTO;
 import util.ReturnObject;
+import util.SSLCertificate;
 import webhostingpackage.WebHostingPackageInfoDTO;
 import webhostingpackage.WebHostingPackageResourceDTO;
 
@@ -90,6 +91,9 @@ public class ProcessPackageWritingRequest {
 				API = CPanelDataWriterMain.API;
 			}
 			
+			SSLCertificate ssl = new SSLCertificate();
+			ssl.setSSL();
+			
 			String API_URL = API+CPanelDataWriterMain.API_TYPE+method[index];			 
 			logger.debug("Calling: "+API_URL);
 			
@@ -112,7 +116,7 @@ public class ProcessPackageWritingRequest {
 				writer.write("&cpmod=paper_lantern");
 				writer.write("&language=en");
 				writer.write("&hasshell=0");
-				writer.write("&name="+dto.getPackageName());
+				writer.write("&name="+getEncodedValue(dto.getPackageName()));
 				for(WebHostingPackageResourceDTO resDTO:dto.getPackResourceDTOMap().values()) {
 					writer.write("&maxftp="+(resDTO.getMaxFTPAccount() > 0 ? resDTO.getMaxFTPAccount() : unlimited));
 					writer.write("&maxsql="+(resDTO.getMaxDatabases() > 0 ? resDTO.getMaxDatabases() : unlimited));
@@ -130,7 +134,7 @@ public class ProcessPackageWritingRequest {
 				
 			}
 			if(index==2) {
-				writer.write("&pkgname="+dto.getPackageName());
+				writer.write("&pkgname="+getEncodedValue(dto.getPackageName()));
 				
 			}
 			
@@ -158,6 +162,18 @@ public class ProcessPackageWritingRequest {
 		 }
 		
 		return status;
+	}
+	
+	public String getEncodedValue(String text) {
+		String str = "";
+		try{
+			str = URLEncoder.encode(text,"utf-8");		     
+		}
+		catch(Exception e){
+			logger.fatal(e.toString());
+		}
+		
+		return str;
 	}
 	
 	public void updateStatus(String id) {

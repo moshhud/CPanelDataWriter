@@ -54,7 +54,7 @@ public class MailService extends Thread{
 				
 				t2 = System.currentTimeMillis();				
 				logger.debug("Time to finish Email service job(ms): "+(t2-t1));
-				Thread.sleep(CPanelDataWriterMain.interval);
+				Thread.sleep(CPanelDataWriterMain.emailCheck);
 				
 				
 			}
